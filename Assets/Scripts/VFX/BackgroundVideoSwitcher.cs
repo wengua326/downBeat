@@ -30,6 +30,9 @@ namespace RhythmDartMR.VFX
         [Tooltip("Optional Texture2D override. If empty, loads Resources/RoomBackdropStatic automatically.")]
         public Texture2D staticImageBackdrop;
 
+        [Tooltip("Automatically hides the simulated backdrop and leaves real Quest Passthrough active on standalone headset builds.")]
+        public bool editorSimulatorOnly = true;
+
         [Header("Video Clips (2.mp4 Active Default, 5.mp4 Standby)")]
         [Tooltip("Active looping default backdrop clip (Assets/2.mp4).")]
         public VideoClip clip2;
@@ -86,6 +89,12 @@ namespace RhythmDartMR.VFX
             }
             Instance = this;
 
+            if (editorSimulatorOnly && !Application.isEditor)
+            {
+                DisableBackdropForHeadsetPassthrough();
+                return;
+            }
+
 #if UNITY_EDITOR
             AutoAssignClipsInEditor();
 #endif
@@ -104,6 +113,12 @@ namespace RhythmDartMR.VFX
 
         private void Start()
         {
+            if (editorSimulatorOnly && !Application.isEditor)
+            {
+                DisableBackdropForHeadsetPassthrough();
+                return;
+            }
+
             HideSyntheticSimulatorEnvironment();
             UpdatePlacement();
             if (!useStaticImageBackdrop && _videoPlayer != null && !_videoPlayer.isPlaying)
@@ -115,6 +130,11 @@ namespace RhythmDartMR.VFX
         private void OnEnable()
         {
             if (Instance == null) Instance = this;
+            if (editorSimulatorOnly && !Application.isEditor)
+            {
+                DisableBackdropForHeadsetPassthrough();
+                return;
+            }
             HideSyntheticSimulatorEnvironment();
         }
 
@@ -239,6 +259,7 @@ namespace RhythmDartMR.VFX
         public void HideSyntheticSimulatorEnvironment()
         {
             if (!Application.isPlaying || !_backdropVisible) return;
+            if (editorSimulatorOnly && !Application.isEditor) return;
 
             if (RhythmDartboard.Instance != null)
             {
@@ -252,6 +273,21 @@ namespace RhythmDartMR.VFX
                 ptLayers[i].hidden = true;
                 ptLayers[i].enabled = false;
             }
+        }
+
+        private void DisableBackdropForHeadsetPassthrough()
+        {
+            _backdropVisible = false;
+            var mr = _meshRenderer != null ? _meshRenderer : GetComponent<MeshRenderer>();
+            if (mr != null) mr.enabled = false;
+            var vp = _videoPlayer != null ? _videoPlayer : GetComponent<VideoPlayer>();
+            if (vp != null)
+            {
+                vp.playOnAwake = false;
+                if (vp.isPlaying) vp.Stop();
+                vp.enabled = false;
+            }
+            enabled = false;
         }
 
         // ------------------------------------------------------------------ Internal Setup

@@ -49,11 +49,9 @@ namespace RhythmDartMR.Gameplay
             3, 19, 7, 16, 8, 11, 14, 9, 12, 5
         };
 
-        private const string UploadedDartboardImagePath =
-            @"C:\Users\wengu\.gemini\antigravity\brain\01704de3-31fb-4661-aa05-9310f8428a06\.user_uploaded\media_1793979831926_81b4f37a.jpg";
-
-        private const string SimulatorRoomsDir =
-            @"C:\Program Files\MetaXRSimulator\v207.1\assets\RKJSModules\public\Cosmo\Shared\assets\rooms";
+        private static readonly string SimulatorRoomsDir = Path.Combine(
+            System.Environment.GetFolderPath(System.Environment.SpecialFolder.ProgramFiles),
+            @"MetaXRSimulator\v207.1\assets\RKJSModules\public\Cosmo\Shared\assets\rooms");
 
         [Header("Large Board Dimensions (Meters) — Matched to Real Dartboard Image Proportions")]
         public float boardRadius = 0.72f;           // 1.44m total diameter
@@ -860,8 +858,7 @@ namespace RhythmDartMR.Gameplay
             string[] candidatePaths = new string[]
             {
                 Path.Combine(Application.dataPath, "Resources/RealDartboard.jpg"),
-                Path.Combine(Application.streamingAssetsPath, "RealDartboard.jpg"),
-                UploadedDartboardImagePath
+                Path.Combine(Application.streamingAssetsPath, "RealDartboard.jpg")
             };
 
             foreach (string p in candidatePaths)

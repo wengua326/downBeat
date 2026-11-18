@@ -116,10 +116,13 @@ namespace RhythmDartMR.UI
                 if (oldObj != null) Destroy(oldObj);
             }
 
-            // Hide synthetic passthrough room when VideoBackground (2.mp4 / 5.mp4) is present
-            bool usingVideoBackdrop = UnityEngine.Object.FindAnyObjectByType<RhythmDartMR.VFX.BackgroundVideoSwitcher>() != null ||
-                                      GameObject.Find("VideoBackground") != null ||
-                                      File.Exists(Path.Combine(Application.dataPath, "2.mp4"));
+            // Hide synthetic passthrough room only in Editor when the simulated backdrop is active
+            var switcher = UnityEngine.Object.FindAnyObjectByType<RhythmDartMR.VFX.BackgroundVideoSwitcher>();
+            bool usingVideoBackdrop = Application.isEditor &&
+                                      (switcher != null
+                                          ? switcher.IsVideoBackdropActive
+                                          : (GameObject.Find("VideoBackground") != null ||
+                                             File.Exists(Path.Combine(Application.dataPath, "2.mp4"))));
 
             var passthroughBlock = GameObject.Find("[BuildingBlock] Passthrough");
             if (passthroughBlock != null)
@@ -196,24 +199,7 @@ namespace RhythmDartMR.UI
 
         public static void EnsureRealImagesCopiedToResources()
         {
-            try
-            {
-                string resDir = Path.Combine(Application.dataPath, "Resources");
-                if (!Directory.Exists(resDir))
-                {
-                    Directory.CreateDirectory(resDir);
-                }
-
-                string srcBoard = @"C:\Users\wengu\.gemini\antigravity\brain\01704de3-31fb-4661-aa05-9310f8428a06\.user_uploaded\media_1793979831926_81b4f37a.jpg";
-                string dstBoard = Path.Combine(resDir, "RealDartboard.jpg");
-                if (File.Exists(srcBoard) && !File.Exists(dstBoard))
-                {
-                    File.Copy(srcBoard, dstBoard, true);
-                }
-            }
-            catch
-            {
-            }
+            // Resources/RealDartboard.jpg and Resources/RoomBackdropStatic.jpg are packaged directly in Assets/Resources.
         }
 
         private static void EnsureSimulatorSyntheticRoomRunning()
@@ -223,7 +209,8 @@ namespace RhythmDartMR.UI
             {
                 if (Process.GetProcessesByName("synth_env_server").Length > 0) return;
 
-                string exePath = @"C:\Program Files\MetaXRSimulator\v207.1\synthetic_env_server\synth_env_server.exe";
+                string programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+                string exePath = Path.Combine(programFiles, @"MetaXRSimulator\v207.1\synthetic_env_server\synth_env_server.exe");
                 if (File.Exists(exePath))
                 {
                     var psi = new ProcessStartInfo
